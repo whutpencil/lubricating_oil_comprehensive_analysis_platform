@@ -86,9 +86,9 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
         self.timer.timeout.connect(self.recv)  ##定时器调用读取串口接收数据
 
         # 窗口样式表文件读取
-        # sshFile = "three.qss"
-        # with open(sshFile, "r") as fh:
-        #     self.setStyleSheet(fh.read())
+        sshFile = "flatwhite.qss"
+        with open(sshFile, "r") as fh:
+            self.setStyleSheet(fh.read())
 
         ####参数意义
         #self.input_table  #打开文件后的输入数据，index为日期
@@ -181,70 +181,80 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
         self.label_4.setText("相关系数矩阵")
         self.display('求' + self.params_list_tostr + '的相关系数矩阵')
     def covariance_matrix_heatmap(self):     ##相关系数热力图
-        f, ax = plt.subplots(figsize=(12, 9))
-        sns.heatmap(self.covariance_matrix_pd, cmap="YlGnBu", cbar=True, annot=True,
-                    square=True, fmt='.2f', annot_kws={'size': 10},ax=ax)
-        #ax.xaxis.tick_top() 将x轴放上面显示
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-        ax.set_yticklabels(ax.get_yticklabels(), rotation=360)
-        ax.invert_yaxis()
-        ax.set_title("相关系数热力图",fontsize=20)
-        f.show()
-        self.display('作' + self.params_list_tostr + '相关系数热力图')
-        return
+        try:
+            f, ax = plt.subplots(figsize=(12, 9))
+            sns.heatmap(self.covariance_matrix_pd, cmap="YlGnBu", cbar=True, annot=True,
+                        square=True, fmt='.2f', annot_kws={'size': 10},ax=ax)
+            #ax.xaxis.tick_top() 将x轴放上面显示
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+            ax.set_yticklabels(ax.get_yticklabels(), rotation=360)
+            ax.invert_yaxis()
+            ax.set_title("相关系数热力图",fontsize=20)
+            f.show()
+            self.display('作' + self.params_list_tostr + '相关系数热力图')
+        except:
+            return
     def eigenvalue(self): ##求特征值
         from sklearn.decomposition import PCA
-        self.pca = PCA(n_components=len(self.params_list))
-        self.eigenvector=self.pca.fit_transform(self.data_std)
-        self.eigenvalue=self.pca.explained_variance_
-        #self.eigenvalue,self.eigenvector=np.linalg.eig(self.covariance_matrix)   #因为求特征值不准，所以不用了
-        self.eigenvalue_pd = pd.DataFrame(self.eigenvalue,columns=['特征值'])
-        self.write_to_table(self.eigenvalue_pd)
-        self.label_4.setText("特征值")
-        self.display('求' + self.params_list_tostr + '相关系数矩阵的特征值')
+        try:
+            self.pca = PCA(n_components=len(self.params_list))
+            self.eigenvector=self.pca.fit_transform(self.data_std)
+            self.eigenvalue=self.pca.explained_variance_
+            #self.eigenvalue,self.eigenvector=np.linalg.eig(self.covariance_matrix)   #因为求特征值不准，所以不用了
+            self.eigenvalue_pd = pd.DataFrame(self.eigenvalue,columns=['特征值'])
+            self.write_to_table(self.eigenvalue_pd)
+            self.label_4.setText("特征值")
+            self.display('求' + self.params_list_tostr + '相关系数矩阵的特征值')
+        except:
+            return
     def eigenvector(self): ##求特征向量
-        index = []
-        for i in range(1, self.eigenvector.shape[1] + 1):
-            index.append(str(i))
-        self.eigenvector_pd=pd.DataFrame(self.eigenvector,columns=index)
-        self.write_to_table(self.eigenvector_pd.round(4))
-        self.label_4.setText("特征向量")
-        self.display('求' + self.params_list_tostr + '相关系数矩阵的特征向量')
+        try:
+            index = []
+            for i in range(1, self.eigenvector.shape[1] + 1):
+                index.append(str(i))
+            self.eigenvector_pd=pd.DataFrame(self.eigenvector,columns=index)
+            self.write_to_table(self.eigenvector_pd.round(4))
+            self.label_4.setText("特征向量")
+            self.display('求' + self.params_list_tostr + '相关系数矩阵的特征向量')
+        except:
+            return
     def scree_plot(self):      ##碎石图
-        f,ax = plt.subplots(figsize=(12, 9))
-        ax.plot(self.eigenvalue, 'ro-', markersize=8)
-        ax.set_title("Scree Plot", fontsize=20)
-        ax.set_xlabel('pca_nums', fontsize=12)
-        ax.set_ylabel('values', fontsize=12)
-        ax.grid(True, linestyle='--', color='black', linewidth=0.5)
-        f.show()
-        self.display('作碎石图')
-        return
+        try:
+            f,ax = plt.subplots(figsize=(12, 9))
+            ax.plot(self.eigenvalue, 'ro-', markersize=8)
+            ax.set_title("Scree Plot", fontsize=20)
+            ax.set_xlabel('主成分', fontsize=15)
+            ax.set_ylabel('特征值', fontsize=15)
+            ax.grid(True, linestyle='--', color='black', linewidth=0.5)
+            f.show()
+            self.display('作碎石图')
+        except:
+            return
     def total_variance_explained(self):     ##总方差解释
-        import traceback
-        eigvalue_num=len(self.params_list)
-        self.eig_pairs = [(np.abs(self.eigenvalue[i]), self.eigenvector[:,i]) for i in range(eigvalue_num)]
-        self.eig_pairs.sort(reverse=True)
-        total_eigvalue=sum(self.eigenvalue)
-        table=[([0.0] * 3) for i in range(eigvalue_num)]
-        table=np.array(table)
-        accumulate = 0.0
-        for i in range(eigvalue_num):
-            #各成分特征值
-            table[i][0]=self.eig_pairs[i][0]
-            #方差占比
-            table[i][1]=self.eig_pairs[i][0]/total_eigvalue
-            #累积方差
-            accumulate += table[i][1]
-            table[i][2]=accumulate
-        # np.around(table[1:3],decimals=3)
-        columns=['特征值','方差的%','累积%']
-        table_pd=pd.DataFrame(table,columns=columns)
-        self.table_pd=table_pd.round(3)
-        self.write_to_table(self.table_pd)
-        self.label_4.setText("解释的总方差")
-        self.display('求解释总方差')
-        return
+        try:
+            eigvalue_num = len(self.params_list)
+            self.eig_pairs = [(np.abs(self.eigenvalue[i]), self.eigenvector[:,i]) for i in range(eigvalue_num)]
+            self.eig_pairs.sort(reverse=True)
+            total_eigvalue = sum(self.eigenvalue)
+            table = [([0.0] * 3) for i in range(eigvalue_num)]
+            table = np.array(table)
+            accumulate = 0.0
+            for i in range(eigvalue_num):
+                #各成分特征值
+                table[i][0] = self.eig_pairs[i][0]
+                #方差占比
+                table[i][1] = self.eig_pairs[i][0]/total_eigvalue
+                #累积方差
+                accumulate += table[i][1]
+                table[i][2] = accumulate
+            columns = ['特征值','方差的%','累积%']
+            table_pd = pd.DataFrame(table,columns=columns)
+            self.table_pd = table_pd.round(3)
+            self.write_to_table(self.table_pd)
+            self.label_4.setText("解释的总方差")
+            self.display('求解释总方差')
+        except:
+            return
     def factorial_load_matrix(self):     ##因子载荷矩阵
         try:
             pca_num,ok = QInputDialog.getText(self, "主成分个数选取", "输入选择的主成分个数:", QLineEdit.Normal)
@@ -261,7 +271,6 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
                 self.write_to_table(component_matrix)
                 self.label_4.setText(str(pca_num)+"个主成分的因子载荷矩阵")
                 self.display('求'+str(pca_num)+'个主成分的因子载荷矩阵')
-                return
         except:
             return
 
@@ -280,7 +289,7 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
                     self.diff += 1
                     self.diff_data=self.diff_data.diff(1).dropna()
                     adftest = adfuller(self.diff_data, autolag='AIC')
-                self.display(u'原始序列经过%s阶差分后归于平稳，p值为%s' %(self.diff, adftest[1]))
+                self.display('原始序列经过%s阶差分后归于平稳，p值为%s' %(self.diff, adftest[1]))
                 plt.clf()
                 ax = self.figure.add_subplot(111)
                 plt.tight_layout(pad=0.1, w_pad=0.1)
@@ -429,7 +438,6 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
             self.path=openfile_name[0]
             self.display('打开文件')
             self.display_no_time(path_openfile_name)
-
         else:
             QMessageBox.warning(self, "注意", "未选择文件！")
             return
@@ -494,22 +502,24 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
                 newItem.setTextAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
                 widgets.setItem(j, i, newItem)
                 ###================遍历表格每个元素，同时添加到tablewidget中========================
-
     ###恢复数据
     def restore_data(self):
-        self.input_table = pd.read_excel(self.path)
-        self.input_table.dropna(axis=1, how='all', inplace=True)
-        name = self.input_table.columns[self.input_table.columns.str.contains('日期|时间')]
-        if len(name) != 0:
-            self.input_table[name[0]] = pd.to_datetime(self.input_table[name[0]])
-            self.input_table.set_index(name[0], inplace=True)
-        self.write_to_table(self.input_table)
-        self.comboCheckBox.addItems(self.input_table.columns.tolist())
-        self.label_4.setText("原始数据")
-        self.display('恢复原始数据')
-        return
+        try:
+            self.input_table = pd.read_excel(self.path)
+            self.input_table.dropna(axis=1, how='all', inplace=True)
+            name = self.input_table.columns[self.input_table.columns.str.contains('日期|时间')]
+            if len(name) != 0:
+                self.input_table[name[0]] = pd.to_datetime(self.input_table[name[0]])
+                self.input_table.set_index(name[0], inplace=True)
+            self.write_to_table(self.input_table)
+            self.comboCheckBox.addItems(self.input_table.columns.tolist())
+            self.label_4.setText("原始数据")
+            self.display('恢复原始数据')
+        except:
+            return
     ###格式调整
     def format_adjust(self):
+        try:
             self.input_table.dropna(axis=0, how='any', inplace=True)
             for column in self.input_table.columns:
                 try:
@@ -518,15 +528,17 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
                     continue
             self.write_to_table(self.input_table)
             self.display('清除数据中特殊字符')
+        except:
             return
     ###删除指标
     def drop_params(self):
+        if self.input_table == None:
+            return
         self.check_check_box()
         self.input_table.drop(self.params_list,axis=1,inplace=True)
         self.write_to_table(self.input_table)
         self.comboCheckBox.addItems(self.input_table.columns.tolist())
         self.display('删除'+self.params_list_tostr+'指标')
-        return
     ###显示统计信息
     def show_info(self):
         self.check_check_box()
@@ -621,61 +633,45 @@ class Mainwindow(QMainWindow,Ui_mainWindow):
         ax.grid(True, linestyle='--', color='black', linewidth=0.4)
         f.show()
         return
-    def draw_predictplot(self,data):
-        ##初始化plt.axis
-        plt.clf()
-        self.axis = self.figure.add_subplot(111)
-        plt.tight_layout(pad=0.1, w_pad=0.1)
-        plt.subplots_adjust(right=0.93, left=0.07, bottom=0.13)
-        if self.plot_grid:
-            self.axis.grid(linestyle='--', color='black', linewidth=0.4)
-        self.axis.plot(self.input_table_select[self.params_list[0]], 'b', label='真实值')
-        self.axis.plot(data, 'r', label='预测值')
-        self.axis.set_ylabel(self.params_list[0])
-        self.axis.legend(loc='best',fontsize=11)
-        self.canvas.draw()
-        self.label_8.setText(self.params_list_tostr + "预测效果图")
-        self.display('绘制' + self.params_list_tostr + '预测效果图')
-        return
-    def draw_picture(self,data=None):
-        if data == None:
-            data=self.input_table
-        ##初始化plt.axis
-        plt.clf()
-        self.axis = self.figure.add_subplot(111)
-        plt.tight_layout(pad=0.1, w_pad=0.1)
-        plt.subplots_adjust(right=0.93, left=0.07, bottom=0.13)
-        if self.plot_grid:
-            self.axis.grid(linestyle='--', color='black', linewidth=0.4)
-        self.check_check_box()
-        if self.input_table.index.dtype == 'datetime64[ns]':
-            self.axis.set_xlabel("时间")
-        if self.select_count == 0:
-            print('最少选择1个参数')
-            QMessageBox.information(self, "注意", "最少选择1个参数")
-            return
-        ##超过两个参数的图
-        if (self.select_count == 1) | (self.select_count > 2):
-            for param in self.params_list:
-                self.axis.plot(self.input_table[param],label=param)
-                self.axis.legend(loc='best', fontsize=11,frameon=True,edgecolor='black')
-            self.canvas.draw()
-            self.label_8.setText(self.params_list_tostr + "随时间变化图")
-            self.display('绘制'+self.params_list_tostr+'单坐标趋势图')
-            return
-        if len(self.params_list) == 2:
-            self.axis.plot(self.input_table[self.params_list[0]],'r',label=self.params_list[0])
-            self.axis.set_ylabel(self.params_list[0])
-            self.axis2=self.axis.twinx()
-            self.axis2.plot(self.input_table[self.params_list[1]], 'b',label=self.params_list[1])
-            self.axis2.set_ylabel(self.params_list[1])
-            #self.axis2.legend(loc=1,bbox_to_anchor=(1,0.9),fontsize=11,frameon=True,edgecolor='black')
-            handles1, labels1 = self.axis.get_legend_handles_labels()
-            handles2, labels2 = self.axis2.get_legend_handles_labels()
-            plt.legend(handles1 + handles2, labels1 + labels2, loc='best',fontsize=10,frameon=True,edgecolor='black')
-            self.canvas.draw()
-            self.label_8.setText(self.params_list_tostr + "随时间变化图")
-            self.display('绘制' + self.params_list_tostr + '双坐标坐标趋势图')
+    def draw_picture(self):
+        try:
+            ##初始化plt.axis
+            plt.clf()
+            self.axis = self.figure.add_subplot(111)
+            plt.tight_layout(pad=0.1, w_pad=0.1)
+            plt.subplots_adjust(right=0.93, left=0.07, bottom=0.13)
+            if self.plot_grid:
+                self.axis.grid(linestyle='--', color='black', linewidth=0.4)
+            self.check_check_box()
+            if self.input_table.index.dtype == 'datetime64[ns]':
+                self.axis.set_xlabel("时间")
+            if self.select_count == 0:
+                print('最少选择1个参数')
+                QMessageBox.information(self, "注意", "最少选择1个参数")
+                return
+            ##超过两个参数的图
+            if (self.select_count == 1) | (self.select_count > 2):
+                for param in self.params_list:
+                    self.axis.plot(self.input_table[param],label=param)
+                    self.axis.legend(loc='best', fontsize=11,frameon=True,edgecolor='black')
+                self.canvas.draw()
+                self.label_8.setText(self.params_list_tostr + "随时间变化图")
+                self.display('绘制'+self.params_list_tostr+'单坐标趋势图')
+                return
+            if len(self.params_list) == 2:
+                self.axis.plot(self.input_table[self.params_list[0]],'r',label=self.params_list[0])
+                self.axis.set_ylabel(self.params_list[0])
+                self.axis2=self.axis.twinx()
+                self.axis2.plot(self.input_table[self.params_list[1]], 'b',label=self.params_list[1])
+                self.axis2.set_ylabel(self.params_list[1])
+                #self.axis2.legend(loc=1,bbox_to_anchor=(1,0.9),fontsize=11,frameon=True,edgecolor='black')
+                handles1, labels1 = self.axis.get_legend_handles_labels()
+                handles2, labels2 = self.axis2.get_legend_handles_labels()
+                plt.legend(handles1 + handles2, labels1 + labels2, loc='best',fontsize=10,frameon=True,edgecolor='black')
+                self.canvas.draw()
+                self.label_8.setText(self.params_list_tostr + "随时间变化图")
+                self.display('绘制' + self.params_list_tostr + '双坐标坐标趋势图')
+        except:
             return
     def display(self, information):
         self.textBrowser.append(time.strftime("%H:%M:%S", time.localtime()))
